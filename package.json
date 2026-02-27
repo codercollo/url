@@ -1,0 +1,33 @@
+{
+  "name": "url",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "css:watch": "npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "css:build": "npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css",
+    "go:dev": "go run .",
+    "dev": "concurrently \"npm run css:watch\" \"npm run go:dev\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codercollo/url.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/codercollo/url/issues"
+  },
+  "homepage": "https://github.com/codercollo/url#readme",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,31 @@
+url-shortener/
+│
+├── cmd/
+│   └── main.go
+│
+├── internal/
+│   ├── config/
+│   ├── domain/
+│   │   ├── url.go              # URL, ShortCode, ClickEvent structs
+│   │   └── analytics.go        # Aggregated stats model
+│   ├── handler/
+│   │   ├── shorten.go          # POST /shorten
+│   │   ├── redirect.go         # GET /:code → 301 redirect
+│   │   └── analytics.go        # GET /:code/stats
+│   ├── service/
+│   │   ├── shortener.go        # Hashing logic, collision handling
+│   │   └── analytics.go        # Click tracking, aggregation
+│   ├── repository/
+│   │   ├── url_repo.go         # Postgres — source of truth
+│   │   └── cache_repo.go       # Redis — fast redirect lookups
+│   └── middleware/
+│       ├── ratelimit.go        # Prevent abuse — token bucket
+│       └── metrics.go          # Prometheus counters per endpoint
+│
+├── pkg/
+│   ├── hash.go                 # Base62 encoding (the actual algorithm)
+│   └── respond.go
+│
+├── migrations/
+├── docker-compose.yml          # App + Postgres + Redis + Prometheus + Grafana
+└── Makefile
