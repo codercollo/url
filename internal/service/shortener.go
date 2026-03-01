@@ -16,11 +16,11 @@ import (
 // Uses Postgres as primary store and Redis as cache.
 type ShortenerService struct {
 	db    repository.URLStore
-	cache *repository.RedisCache
+	cache repository.CacheStore
 }
 
 // NewShortenerService initializes the service layer
-func NewShortenerService(db repository.URLStore, cache *repository.RedisCache) *ShortenerService {
+func NewShortenerService(db repository.URLStore, cache repository.CacheStore) *ShortenerService {
 	return &ShortenerService{db: db, cache: cache}
 }
 

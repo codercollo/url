@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"url/internal/handler"
 	"url/internal/middleware"
+	"url/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Register wires all routes and middleware to the gin engine
-func Register(r *gin.Engine, h *handler.Handler) {
+// Register - wires all routes and middleware to the gin engine
+func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStore) {
 	//Static files
 	r.Static("/static", "./static")
 
@@ -21,11 +22,13 @@ func Register(r *gin.Engine, h *handler.Handler) {
 	//Global middleware - applies to every route
 	r.Use(middleware.RateLimiter())
 
-	//Pages
+	//Page routes
 	r.GET("/", h.Home)
 
 	//URL shortener
 	r.POST("/shorten", h.Shorten)
-	r.GET("/:code", middleware.Metrics(), h.Redirect)
+
+	//Metrics only on /:code - tracks real clicks on redirects
+	r.GET("/:code", middleware.Metrics(clickStore), h.Redirect)
 	r.GET("/:code/stats", h.AnalyticsHandler)
 }

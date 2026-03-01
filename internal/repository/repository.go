@@ -19,3 +19,10 @@ type ClickStore interface {
 	SaveClick(c context.Context, event models.ClickEvent) error
 	GetAnalytics(c context.Context, code string) (*models.AnalyticsAggregate, error)
 }
+
+// CacheStore defines the contract for storig click events
+type CacheStore interface {
+	Set(c context.Context, url models.URL) error
+	Get(c context.Context, code string) (*models.URL, error)
+	Delete(c context.Context, code string) error
+}

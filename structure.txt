@@ -1,31 +1,157 @@
 url-shortener/
 │
 ├── cmd/
-│   └── main.go
+│   └── web/
+│       └── main.go
+│           ← entry point, wires all layers
 │
 ├── internal/
 │   ├── config/
-│   ├── domain/
-│   │   ├── url.go              # URL, ShortCode, ClickEvent structs
-│   │   └── analytics.go        # Aggregated stats model
-│   ├── handler/
-│   │   ├── shorten.go          # POST /shorten
-│   │   ├── redirect.go         # GET /:code → 301 redirect
-│   │   └── analytics.go        # GET /:code/stats
-│   ├── service/
-│   │   ├── shortener.go        # Hashing logic, collision handling
-│   │   └── analytics.go        # Click tracking, aggregation
+│   │   └── config.go
+│   │       ← loads .env into Config struct
+│   │
+│   ├── errors/
+│   │   └── errors.go
+│   │       ← ErrNotFound, ErrExpired, ErrInactive
+│   │
+│   ├── models/
+│   │   ├── url.go
+│   │   │   ← URL, ShortCode, ClickEvent structs
+│   │   └── analytics.go
+│   │       ← AnalyticsAggregate, DailyCount structs
+│   │
 │   ├── repository/
-│   │   ├── url_repo.go         # Postgres — source of truth
-│   │   └── cache_repo.go       # Redis — fast redirect lookups
-│   └── middleware/
-│       ├── ratelimit.go        # Prevent abuse — token bucket
-│       └── metrics.go          # Prometheus counters per endpoint
+│   │   ├── repository.go
+│   │   │   ← URLStore, ClickStore interfaces
+│   │   ├── url_repo.go
+│   │   │   ← PostgresStore — source of truth
+│   │   └── cache_repo.go
+│   │       ← RedisCache — fast lookups
+│   │
+│   ├── service/
+│   │   ├── shortener.go
+│   │   │   ← Shorten, Resolve, Delete logic
+│   │   └── analytics.go
+│   │       ← GetAnalytics, click aggregation
+│   │
+│   ├── handler/
+│   │   ├── handler.go
+│   │   │   ← Handler struct, NewHandler
+│   │   ├── home.go
+│   │   │   ← GET /
+│   │   ├── shorten.go
+│   │   │   ← POST /shorten
+│   │   ├── redirect.go
+│   │   │   ← GET /:code → 301
+│   │   ├── analytics.go
+│   │   │   ← GET /:code/stats
+│   │   └── health.go
+│   │       ← GET /health → 200 OK
+│   │
+│   ├── middleware/
+│   │   ├── ratelimit.go
+│   │   │   ← per-IP token bucket (Redis-backed)
+│   │   ├── metrics.go
+│   │   │   ← capture + persist click events
+│   │   ├── auth.go
+│   │   │   ← API key validation
+│   │   ├── cors.go
+│   │   │   ← CORS headers
+│   │   └── timeout.go
+│   │       ← request timeout context
+│   │
+│   ├── routes/
+│   │   └── routes.go
+│   │       ← all route + middleware registration
+│   │
+│   ├── helpers/
+│   │   └── helpers.go
+│   │       ← RenderPage jet template helper
+│   │
+│   └── templates/
+│       └── templates.go
+│           ← TemplateData struct
 │
 ├── pkg/
-│   ├── hash.go                 # Base62 encoding (the actual algorithm)
-│   └── respond.go
+│   ├── hash.go
+│   │   ← Base62/nanoid short code generation
+│   ├── respond.go
+│   │   ← standardized JSON response helpers
+│   ├── sanitize.go
+│   │   ← URL validation and sanitization
+│   └── logger.go
+│       ← structured logger (zerolog/zap)
+│
+├── views/
+│   └── home.jet
+│       ← home page template
+│
+├── static/
+│   └── css/
+│       ├── input.css
+│       │   ← Tailwind source
+│       └── output.css
+│           ← compiled (gitignored)
 │
 ├── migrations/
-├── docker-compose.yml          # App + Postgres + Redis + Prometheus + Grafana
-└── Makefile
+│   ├── 000001_create_urls_table.up.sql
+│   ├── 000001_create_urls_table.down.sql
+│   ├── 000002_create_clicks_table.up.sql
+│   ├── 000002_create_clicks_table.down.sql
+│   ├── 000003_create_api_keys_table.up.sql
+│   │   ← for auth
+│   └── 000003_create_api_keys_table.down.sql
+│
+├── tests/
+│   ├── unit/
+│   │   ├── shortener_test.go
+│   │   │   ← service logic with mocks
+│   │   ├── analytics_test.go
+│   │   │   ← analytics service unit tests
+│   │   └── mocks/
+│   │       ├── url_store_mock.go
+│   │       │   ← mock URLStore interface
+│   │       └── cache_mock.go
+│   │           ← mock RedisCache interface
+│   │
+│   └── integration/
+│       ├── shorten_test.go
+│       │   ← POST /shorten → real DB
+│       ├── redirect_test.go
+│       │   ← GET /:code → real DB + Redis
+│       ├── analytics_test.go
+│       │   ← GET /:code/stats → real DB
+│       └── testhelpers/
+│           └── setup.go
+│               ← test DB setup, teardown, seed
+│
+├── docker/
+│   ├── Dockerfile
+│   │   ← production multi-stage build
+│   └── Dockerfile.dev
+│       ← development image
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│           ← run tests + build on push
+│
+├── .env
+│   ← local secrets (gitignored)
+│
+├── .env.example
+│   ← committed, shows required keys
+│
+├── .gitignore
+├── docker-compose.yml
+│   ← Postgres + Redis + App
+│
+├── docker-compose.dev.yml
+│   ← dev with hot reload
+│
+├── Makefile
+├── go.mod
+├── go.sum
+├── package.json
+├── postcss.config.js
+└── README.md

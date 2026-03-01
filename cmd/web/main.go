@@ -23,7 +23,7 @@ func main() {
 	}
 	defer db.Close()
 
-	//Verify the connection is alive
+	//Verify Postgres is alive
 	if err := db.Ping(); err != nil {
 		log.Fatal("postgres ping failed:", err)
 	}
@@ -49,7 +49,9 @@ func main() {
 	//Server
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"127.0.0.1"})
-	routes.Register(r, h)
+
+	//pgStore implements both URLStore and ClickStore
+	routes.Register(r, h, pgStore)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("failed to start server: %v", err)

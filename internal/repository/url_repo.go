@@ -135,3 +135,49 @@ func (s *PostgresStore) SaveClick(c context.Context, event models.ClickEvent) er
 	return err
 
 }
+
+// GetAnalytics retrieves aggregated click statistics for a given short code
+func (s *PostgresStore) GetAnalytics(c context.Context, code string) (*models.AnalyticsAggregate, error) {
+	//Query total number of clicks for the short code
+	var total int
+	err := s.db.QueryRowContext(c, `
+	SELECT COUNT(*) FROM clicks WHERE short_code = $1
+	`, code).Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+
+	//Query daily click counts(last 30 days, most recent first)
+	rows, err := s.db.QueryContext(c, `
+	 SELECT DATE(clicked_at) as date, COUNT(*) as count
+		FROM clicks
+		WHERE short_code = $1
+		GROUP BY DATE(clicked_at)
+		ORDER BY date DESC
+		LIMIT 30
+	`, code)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	//Iterate through results rows and build daily breakdown
+	var breakdown []models.DailyCount
+	for rows.Next() {
+		var d models.DailyCount
+		if err := rows.Scan(
+			&d.Date,
+			&d.Count,
+		); err != nil {
+			return nil, err
+		}
+		breakdown = append(breakdown, d)
+	}
+
+	//Return aggregate analytics response
+	return &models.AnalyticsAggregate{
+		ShortCode:   code,
+		TotalClicks: total,
+		Breakdown:   breakdown,
+	}, nil
+}
