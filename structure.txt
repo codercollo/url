@@ -2,96 +2,76 @@ url-shortener/
 │
 ├── cmd/
 │   └── web/
-│       └── main.go
-│           ← entry point, wires all layers
+│       └── main.go                           ← entry point, wires all layers
 │
 ├── internal/
 │   ├── config/
-│   │   └── config.go
-│   │       ← loads .env into Config struct
+│   │   └── config.go                         ← loads .env into Config struct
 │   │
 │   ├── errors/
-│   │   └── errors.go
-│   │       ← ErrNotFound, ErrExpired, ErrInactive
+│   │   └── errors.go                         ← ErrNotFound, ErrExpired, ErrInactive
 │   │
 │   ├── models/
-│   │   ├── url.go
-│   │   │   ← URL, ShortCode, ClickEvent structs
-│   │   └── analytics.go
-│   │       ← AnalyticsAggregate, DailyCount structs
+│   │   ├── url.go                            ← URL, ShortCode, ClickEvent structs
+│   │   └── analytics.go                      ← AnalyticsAggregate, DailyCount structs
 │   │
 │   ├── repository/
-│   │   ├── repository.go
-│   │   │   ← URLStore, ClickStore interfaces
-│   │   ├── url_repo.go
-│   │   │   ← PostgresStore — source of truth
-│   │   └── cache_repo.go
-│   │       ← RedisCache — fast lookups
+│   │   ├── repository.go                     ← URLStore, ClickStore, CacheStore interfaces
+│   │   ├── url_repo.go                       ← PostgresStore — source of truth
+│   │   ├── url_repo_test.go                  ← unit tests (sqlmock)
+│   │   ├── cache_repo.go                     ← RedisCache — fast lookups
+│   │   └── cache_repo_test.go                ← unit tests (mock redis)
 │   │
 │   ├── service/
-│   │   ├── shortener.go
-│   │   │   ← Shorten, Resolve, Delete logic
-│   │   └── analytics.go
-│   │       ← GetAnalytics, click aggregation
+│   │   ├── shortener.go                      ← Shorten, Resolve, Delete logic
+│   │   ├── shortener_test.go                 ← unit tests (mock store + cache)
+│   │   ├── analytics.go                      ← GetAnalytics, aggregation logic
+│   │   └── analytics_test.go                 ← unit tests (mock clickstore)
 │   │
 │   ├── handler/
-│   │   ├── handler.go
-│   │   │   ← Handler struct, NewHandler
-│   │   ├── home.go
-│   │   │   ← GET /
-│   │   ├── shorten.go
-│   │   │   ← POST /shorten
-│   │   ├── redirect.go
-│   │   │   ← GET /:code → 301
-│   │   ├── analytics.go
-│   │   │   ← GET /:code/stats
-│   │   └── health.go
-│   │       ← GET /health → 200 OK
+│   │   ├── handler.go                        ← Handler struct, NewHandler
+│   │   ├── home.go                           ← GET /
+│   │   ├── shorten.go                        ← POST /shorten
+│   │   ├── shorten_test.go                   ← unit tests (mock service)
+│   │   ├── redirect.go                       ← GET /:code → 301
+│   │   ├── redirect_test.go                  ← unit tests (mock service)
+│   │   ├── analytics.go                      ← GET /:code/stats (JSON API)
+│   │   ├── analytics_test.go                 ← unit tests
+│   │   ├── admin.go                          ← GET /admin/stats (HTML dashboard) ← NEW
+│   │   ├── admin_test.go                     ← unit tests ← NEW
+│   │   └── health.go                         ← GET /health → 200 OK
 │   │
 │   ├── middleware/
-│   │   ├── ratelimit.go
-│   │   │   ← per-IP token bucket (Redis-backed)
-│   │   ├── metrics.go
-│   │   │   ← capture + persist click events
-│   │   ├── auth.go
-│   │   │   ← API key validation
-│   │   ├── cors.go
-│   │   │   ← CORS headers
-│   │   └── timeout.go
-│   │       ← request timeout context
+│   │   ├── ratelimit.go                      ← per-IP token bucket
+│   │   ├── metrics.go                        ← capture + persist click events
+│   │   ├── metrics_test.go                   ← unit tests (mock clickstore)
+│   │   ├── auth.go                           ← API key validation
+│   │   ├── cors.go                           ← CORS headers
+│   │   └── timeout.go                        ← request timeout context
 │   │
 │   ├── routes/
-│   │   └── routes.go
-│   │       ← all route + middleware registration
+│   │   └── routes.go                         ← all route + middleware registration
 │   │
 │   ├── helpers/
-│   │   └── helpers.go
-│   │       ← RenderPage jet template helper
+│   │   └── helpers.go                        ← RenderPage jet template helper
 │   │
 │   └── templates/
-│       └── templates.go
-│           ← TemplateData struct
+│       └── templates.go                      ← TemplateData struct
 │
 ├── pkg/
-│   ├── hash.go
-│   │   ← Base62/nanoid short code generation
-│   ├── respond.go
-│   │   ← standardized JSON response helpers
-│   ├── sanitize.go
-│   │   ← URL validation and sanitization
-│   └── logger.go
-│       ← structured logger (zerolog/zap)
+│   ├── hash.go                               ← Base62/nanoid short code generation
+│   ├── respond.go                            ← standardized JSON response helpers
+│   ├── sanitize.go                           ← URL validation and sanitization
+│   └── logger.go                             ← structured logger (zerolog/zap)
 │
 ├── views/
-│   └── home.jet
-│       ← home page template
+│   ├── home.jet                              ← home page — shorten form
+│   └── admin.jet                             ← admin dashboard — analytics ← NEW
 │
 ├── static/
 │   └── css/
 │       ├── input.css
-│       │   ← Tailwind source
-│       └── output.css
-│           ← compiled (gitignored)
+│       └── output.css                        ← compiled (gitignored)
 │
 ├── migrations/
 │   ├── 000001_create_urls_table.up.sql
@@ -99,56 +79,21 @@ url-shortener/
 │   ├── 000002_create_clicks_table.up.sql
 │   ├── 000002_create_clicks_table.down.sql
 │   ├── 000003_create_api_keys_table.up.sql
-│   │   ← for auth
 │   └── 000003_create_api_keys_table.down.sql
-│
-├── tests/
-│   ├── unit/
-│   │   ├── shortener_test.go
-│   │   │   ← service logic with mocks
-│   │   ├── analytics_test.go
-│   │   │   ← analytics service unit tests
-│   │   └── mocks/
-│   │       ├── url_store_mock.go
-│   │       │   ← mock URLStore interface
-│   │       └── cache_mock.go
-│   │           ← mock RedisCache interface
-│   │
-│   └── integration/
-│       ├── shorten_test.go
-│       │   ← POST /shorten → real DB
-│       ├── redirect_test.go
-│       │   ← GET /:code → real DB + Redis
-│       ├── analytics_test.go
-│       │   ← GET /:code/stats → real DB
-│       └── testhelpers/
-│           └── setup.go
-│               ← test DB setup, teardown, seed
 │
 ├── docker/
 │   ├── Dockerfile
-│   │   ← production multi-stage build
 │   └── Dockerfile.dev
-│       ← development image
 │
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
-│           ← run tests + build on push
 │
 ├── .env
-│   ← local secrets (gitignored)
-│
 ├── .env.example
-│   ← committed, shows required keys
-│
 ├── .gitignore
 ├── docker-compose.yml
-│   ← Postgres + Redis + App
-│
 ├── docker-compose.dev.yml
-│   ← dev with hot reload
-│
 ├── Makefile
 ├── go.mod
 ├── go.sum
