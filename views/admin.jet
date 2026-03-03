@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — URL Analytics</title>
+    <link rel="stylesheet" href="/static/css/output.css" />
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 px-8 py-5">
+      <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+          <p class="text-sm text-gray-500 mt-0.5">
+            Click activity across all short URLs
+          </p>
+        </div>
+        <a href="/" class="text-sm text-indigo-600 hover:underline"
+          >← Back to shortener</a
+        >
+      </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-8 py-8">
+      <!-- Summary cards -->
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <p class="text-sm text-gray-500 mb-1">Total Links</p>
+          <p class="text-4xl font-bold text-gray-900">
+            {{.Data["total_links"]}}
+          </p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <p class="text-sm text-gray-500 mb-1">Total Clicks</p>
+          <p class="text-4xl font-bold text-indigo-600">
+            {{.Data["total_clicks"]}}
+          </p>
+        </div>
+      </div>
+
+      <!-- Per-URL analytics table -->
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+          <h2
+            class="text-sm font-semibold text-gray-700 uppercase tracking-wide"
+          >
+            All Short URLs
+          </h2>
+        </div>
+
+        {{stats := .Data["stats"]}}
+        {{if stats}}
+        <table class="w-full text-sm">
+          <thead
+            class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide"
+          >
+            <tr>
+              <th class="px-6 py-3 text-left">Short Code</th>
+              <th class="px-6 py-3 text-left">Total Clicks</th>
+              <th class="px-6 py-3 text-left">Last 30 Days</th>
+              <th class="px-6 py-3 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {{range _, stat := stats}}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <!-- Short code + link -->
+              <td class="px-6 py-4">
+                <div class="font-mono font-medium text-gray-900">
+                  {{ stat.ShortCode }}
+                </div>
+                <div class="text-xs text-gray-400 mt-0.5">
+                  <a
+                    href="/{{ stat.ShortCode }}"
+                    target="_blank"
+                    class="text-indigo-500 hover:underline"
+                  >
+                    localhost:8080/{{ stat.ShortCode }}
+                  </a>
+                </div>
+              </td>
+
+              <!-- Total clicks -->
+              <td class="px-6 py-4">
+                <span class="text-lg font-semibold text-gray-900">{{
+                  stat.TotalClicks
+                }}</span>
+              </td>
+
+              <!-- Daily sparkline -->
+              <td class="px-6 py-4">
+                {{if stat.Breakdown}}
+                <div class="flex items-end gap-0.5 h-8">
+                  {{range _, day := stat.Breakdown}}
+                  <div
+                    class="bg-indigo-400 rounded-sm w-3 sparkbar"
+                    data-count="{{ day.Count }}"
+                    title="{{ day.Date }}: {{ day.Count }} clicks"
+                  ></div>
+                  {{ end }}
+                </div>
+                {{else}}
+                <span class="text-gray-400 text-xs">No data</span>
+                {{ end }}
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4">
+                <a
+                  href="/{{ stat.ShortCode }}/stats"
+                  class="text-xs text-indigo-600 hover:underline font-medium"
+                >
+                  Full stats →
+                </a>
+              </td>
+            </tr>
+            {{
+              end
+            }}
+          </tbody>
+        </table>
+        {{else}}
+        <div class="px-6 py-12 text-center text-gray-400 text-sm">
+          No URLs shortened yet.
+        </div>
+        {{ end }}
+      </div>
+    </div>
+    <script>
+      document.querySelectorAll(".sparkbar").forEach((bar) => {
+        const count = parseInt(bar.dataset.count) || 0;
+        bar.style.height = count * 4 + "px";
+      });
+    </script>
+  </body>
+</html>

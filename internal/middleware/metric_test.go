@@ -39,6 +39,12 @@ func (m *mockClickStore) GetAnalytics(c context.Context, code string) (*models.A
 	return nil, m.getAnalyticsErr
 }
 
+// GetAllShortCodes — added to satisfy updated ClickStore interface
+// Metrics middleware never calls this, but the interface requires it
+func (m *mockClickStore) GetAllShortCodes(c context.Context) ([]string, error) {
+	return nil, nil
+}
+
 //HELPERS
 
 // setupRouter configures a test GIN router with: metrics middleware, a test handler

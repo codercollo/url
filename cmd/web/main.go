@@ -38,13 +38,15 @@ func main() {
 		log.Fatal("redis ping failed:", err)
 	}
 
-	//Layers
+	//Repository Layer
 	pgStore := repository.NewPostgresStore(db)
 	redisCache := repository.NewRedisCache(rdb, 24*time.Hour)
-	shortenerSvc := service.NewShortenerService(pgStore, redisCache)
 
+	//Service Layer
+	shortenerSvc := service.NewShortenerService(pgStore, redisCache)
+	analyticsSvc := service.NewAnalyticsService(pgStore)
 	//Handlers
-	h := handler.NewHandler(shortenerSvc)
+	h := handler.NewHandler(shortenerSvc, analyticsSvc)
 
 	//Server
 	r := gin.Default()

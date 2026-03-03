@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	apperrors "url/internal/errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,20 +15,35 @@ type AnalyticsResponse struct {
 	TotalClicks int    `json:"total_clicks"`
 }
 
-// AnalyticsHandler handles GET requests for URL analytics metrics
+// AnalyticsHandler - returns aggregared click
+// statistics for a short code as JSON
 func (h *Handler) AnalyticsHandler(c *gin.Context) {
-	//Get the short code from URL parameter
+	//get short code from URL
 	code := c.Param("code")
 
-	//Validate that a code is provided
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
+	//Fetch aggregated stats from analytics service
+	agg, err := h.analytics.GetForCode(c.Request.Context(), code)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrURLNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"errors": "short code not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errors": "failed to fetch analytics",
+		})
 		return
 	}
+	if agg == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "short code not found",
+		})
+		return
 
-	//Respond
-	c.JSON(http.StatusOK, AnalyticsResponse{
-		ShortCode:   code,
-		TotalClicks: 0,
-	})
+	}
+	//Return analytics as JSON
+	c.JSON(http.StatusOK, agg)
+
 }

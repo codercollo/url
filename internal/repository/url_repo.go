@@ -106,6 +106,33 @@ func (s *PostgresStore) GetByOriginalURL(c context.Context, originalURL string) 
 	return &url, nil
 }
 
+// GetAllShortCodes returns all distint active short codes from the urls table
+// Used by the admin dashboard to load analytics for every URL
+func (s *PostgresStore) GetAllShortCodes(c context.Context) ([]string, error) {
+	//Query all active short codes ordered by creation time
+	rows, err := s.db.QueryContext(c, `
+	SELECT short_code FROM urls WHERE is_active = true ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var codes []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			//Read each short code
+			return nil, err
+		}
+		//add to result slice
+		codes = append(codes, code)
+	}
+
+	//return all active short codes
+	return codes, nil
+}
+
 // Delete performs a soft delete setting if_active = false
 // The record remains in the database
 func (s *PostgresStore) Delete(c context.Context, code string) error {

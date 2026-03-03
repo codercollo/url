@@ -30,5 +30,10 @@ func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStor
 
 	//Metrics only on /:code - tracks real clicks on redirects
 	r.GET("/:code", middleware.Metrics(clickStore), h.Redirect)
+
+	//Per-URL analytics
 	r.GET("/:code/stats", h.AnalyticsHandler)
+
+	// Admin dashboard — HTML, shows all URLs + click counts
+	r.GET("/admin/stats", h.AdminStats)
 }
