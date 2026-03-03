@@ -39,9 +39,12 @@ func (h *Handler) Shorten(c *gin.Context) {
 	//Build the full short URL
 	shortURL := "http://localhost:8080/" + url.ShortCode
 
-	//If request came from the HTML form, re-render the page
-	//with the result
-	if c.GetHeader("Accept") == "text/html" || c.ContentType() == "application/x-www-form-urlencoded" {
+	//Accept: application/json  - Only render HTML template if client explicitly wants
+	//HTML or submitted a form without requesting JSON
+	wantsJSON := c.GetHeader("Accept") == "application/json"
+	wantsHTML := c.GetHeader("Accept") == "text/html" || c.ContentType() == "application/x-www-form-urlencoded"
+
+	if wantsHTML && !wantsJSON {
 		helpers.RenderPage(c, "home", &templates.TemplateData{
 			Data: map[string]interface{}{
 				"short_url": shortURL,
@@ -49,6 +52,17 @@ func (h *Handler) Shorten(c *gin.Context) {
 		})
 		return
 	}
+
+	//If request came from the HTML form, re-render the page
+	//with the result
+	// if c.GetHeader("Accept") == "text/html" || c.ContentType() == "application/x-www-form-urlencoded" {
+	// 	helpers.RenderPage(c, "home", &templates.TemplateData{
+	// 		Data: map[string]interface{}{
+	// 			"short_url": shortURL,
+	// 		},
+	// 	})
+	// 	return
+	// }
 
 	//Otherwise reurn JSON for API clients
 	c.JSON(http.StatusOK, ShortenResponse{

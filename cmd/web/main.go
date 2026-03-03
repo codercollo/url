@@ -54,6 +54,6 @@ func main() {
 	routes.Register(r, h, pgStore)
 
 	if err := r.Run(":8080"); err != nil {
-		log.Fatal("failed to start server: %v", err)
+		log.Fatalf("failed to start server: %v", err)
 	}
 }
