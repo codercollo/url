@@ -1,0 +1,75 @@
+{{define "title"}}snip.ly — URL Shortener{{end}}
+
+{{define "body"}}
+<div class="w-full max-w-2xl mx-auto text-center">
+
+<!-- Header -->
+<div class="mb-10">
+    <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-2">snip.ly</h1>
+    <p class="text-gray-400 text-base">Shorter links. Smarter sharing.</p>
+</div>
+
+    <p class="text-gray-500 text-lg mb-12 max-w-md mx-auto leading-relaxed">
+        Paste any long URL and get a short link that goes anywhere.
+    </p>
+<!-- Input bar -->
+<div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-1.5 flex items-center gap-2 mb-4">
+    <div class="flex-1 flex items-center gap-3 pl-4">
+        <svg class="w-4 h-4 text-blue-400 shrink-0 " fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        <form action="/shorten" method="POST" class="flex-1 flex items-center gap-3" id="shorten-form">
+            {{if .CSRFToken}}
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}" />
+            {{end}}
+            <input
+                id="url"
+                type="url"
+                name="url"
+                placeholder="https://your-very-long-url.com/goes/here"
+                required
+                autofocus
+                class="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none py-3 px-3 font-medium"
+            />
+            <button type="submit"
+                class="shrink-0 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-gray-900 text-sm font-semibold px-6 py-3 rounded-xl transition-colors shadow-sm">
+                Shorten →
+            </button>
+        </form>
+    </div>
+</div>
+
+{{if .Data}}{{with index .Data "short_url"}}
+<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 mb-4">
+
+    <!-- Header row -->
+    <div class="flex items-center gap-2 mb-3">
+        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        <p class="text-xs font-semibold text-green-600 uppercase tracking-widest">Ready to share</p>
+    </div>
+
+    <!-- Link + copy row -->
+    <div class="flex items-center gap-3 bg-white rounded-xl border border-blue-100 px-4 py-3 shadow-sm">
+        <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+        <a href="{{.}}" target="_blank"
+            class="flex-1 text-gray-900 font-semibold text-sm hover:text-blue-600 transition-colors truncate">
+            {{.}}
+        </a>
+        <button
+            onclick="navigator.clipboard.writeText('{{.}}');this.innerHTML='✓ Copied';this.classList.replace('bg-blue-600','bg-green-500');setTimeout(()=>{this.innerHTML='Copy';this.classList.replace('bg-green-500','bg-blue-600')},2000)"
+            class="shrink-0 bg-blue-600 hover:bg-blue-700 text-gray-900 text-xs font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+            Copy
+        </button>
+    </div>
+</div>
+{{end}}{{end}}
+
+    <!-- Subtle hint -->
+    <p class="text-xs text-gray-300 mt-6">
+        <a href="/admin/stats" class="hover:text-blue-500 transition-colors">View analytics dashboard →</a>
+    </p>
+
+</div>
+{{end}}

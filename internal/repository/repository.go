@@ -27,3 +27,10 @@ type CacheStore interface {
 	Get(c context.Context, code string) (*models.URL, error)
 	Delete(c context.Context, code string) error
 }
+
+// AdminStore defines persistence operations for admin accounts
+type AdminStore interface {
+	CreateAdmin(ctx context.Context, admin models.Admin) error
+	GetAdminByEmail(ctx context.Context, email string) (*models.Admin, error)
+	GetAdminByUsername(ctx context.Context, username string) (*models.Admin, error)
+}

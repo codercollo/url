@@ -1,0 +1,16 @@
+{{define "toast"}}
+{{if .Flash}}
+<div id="toast" class="fixed top-4 right-4 z-50 bg-white border border-green-200 shadow-lg rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-gray-800 max-w-sm">
+    <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+    <span class="flex-1">{{.Flash}}</span>
+    <button onclick="document.getElementById('toast').remove()" class="text-gray-300 hover:text-gray-500 text-lg leading-none">&times;</button>
+</div>
+{{end}}
+{{if .Error}}
+<div id="toast-error" class="fixed top-4 right-4 z-50 bg-white border border-red-200 shadow-lg rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-red-700 max-w-sm">
+    <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+    <span class="flex-1">{{.Error}}</span>
+    <button onclick="document.getElementById('toast-error').remove()" class="text-red-300 hover:text-red-500 text-lg leading-none">&times;</button>
+</div>
+{{end}}
+{{end}}

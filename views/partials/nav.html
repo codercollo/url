@@ -1,0 +1,18 @@
+{{define "nav"}}
+<header class="bg-white border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+            <a href="/" class="text-blue-600 font-bold text-lg tracking-tight">snip.ly</a>
+            <a href="/admin/stats" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Dashboard</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="/" class="text-sm text-gray-500 hover:text-blue-600 transition-colors">Shortener</a>
+            <form action="/logout" method="POST">
+                <button type="submit" class="text-sm bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 font-medium px-3 py-1.5 rounded-lg transition-colors">
+                    Sign out
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+{{end}}

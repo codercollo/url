@@ -2,7 +2,7 @@ url-shortener/
 │
 ├── cmd/
 │   └── web/
-│       └── main.go                           ← entry point, wires all layers
+│       └── main.go                           ← wires auth service + session store
 │
 ├── internal/
 │   ├── config/
@@ -10,68 +10,86 @@ url-shortener/
 │   │
 │   ├── errors/
 │   │   └── errors.go                         ← ErrNotFound, ErrExpired, ErrInactive
+│   │                                            ErrUnauthorized, ErrForbidden ← NEW
 │   │
 │   ├── models/
 │   │   ├── url.go                            ← URL, ShortCode, ClickEvent structs
-│   │   └── analytics.go                      ← AnalyticsAggregate, DailyCount structs
+│   │   ├── analytics.go                      ← AnalyticsAggregate, DailyCount structs
+│   │   └── admin.go                          ← Admin, Role, Session structs ← NEW
 │   │
 │   ├── repository/
-│   │   ├── repository.go                     ← URLStore, ClickStore, CacheStore interfaces
-│   │   ├── url_repo.go                       ← PostgresStore — source of truth
-│   │   ├── url_repo_test.go                  ← unit tests (sqlmock)
-│   │   ├── cache_repo.go                     ← RedisCache — fast lookups
-│   │   └── cache_repo_test.go                ← unit tests (mock redis)
+│   │   ├── repository.go                     ← all interfaces
+│   │   ├── url_repo.go                       ← PostgresStore
+│   │   ├── url_repo_test.go
+│   │   ├── cache_repo.go                     ← RedisCache
+│   │   ├── cache_repo_test.go
+│   │   ├── admin_repo.go                     ← AdminStore — GetByEmail, Save ← NEW
+│   │   ├── admin_repo_test.go                ← NEW
+│   │   ├── session_repo.go                   ← SessionStore — Redis-backed ← NEW
+│   │   └── session_repo_test.go              ← NEW
 │   │
 │   ├── service/
-│   │   ├── shortener.go                      ← Shorten, Resolve, Delete logic
-│   │   ├── shortener_test.go                 ← unit tests (mock store + cache)
-│   │   ├── analytics.go                      ← GetAnalytics, aggregation logic
-│   │   └── analytics_test.go                 ← unit tests (mock clickstore)
+│   │   ├── shortener.go
+│   │   ├── shortener_test.go
+│   │   ├── analytics.go
+│   │   ├── analytics_test.go
+│   │   ├── auth_service.go                   ← Login, Logout, CreateAdmin ← NEW
+│   │   └── auth_service_test.go              ← NEW
 │   │
 │   ├── handler/
-│   │   ├── handler.go                        ← Handler struct, NewHandler
-│   │   ├── home.go                           ← GET /
-│   │   ├── shorten.go                        ← POST /shorten
-│   │   ├── shorten_test.go                   ← unit tests (mock service)
-│   │   ├── redirect.go                       ← GET /:code → 301
-│   │   ├── redirect_test.go                  ← unit tests (mock service)
-│   │   ├── analytics.go                      ← GET /:code/stats (JSON API)
-│   │   ├── analytics_test.go                 ← unit tests
-│   │   ├── admin.go                          ← GET /admin/stats (HTML dashboard) ← NEW
-│   │   ├── admin_test.go                     ← unit tests ← NEW
-│   │   └── health.go                         ← GET /health → 200 OK
+│   │   ├── handler.go                        ← add auth service to Handler struct
+│   │   ├── home.go
+│   │   ├── shorten.go
+│   │   ├── shorten_test.go
+│   │   ├── redirect.go
+│   │   ├── redirect_test.go
+│   │   ├── analytics.go
+│   │   ├── analytics_test.go
+│   │   ├── admin.go                          ← AdminStats (protected)
+│   │   ├── admin_test.go
+│   │   ├── auth_handler.go                   ← GET/POST /admin/login ← NEW
+│   │   │                                        GET /admin/logout
+│   │   │                                        GET/POST /admin/signup (admin only)
+│   │   ├── auth_handler_test.go              ← NEW
+│   │   └── health.go
 │   │
 │   ├── middleware/
-│   │   ├── ratelimit.go                      ← per-IP token bucket
-│   │   ├── metrics.go                        ← capture + persist click events
-│   │   ├── metrics_test.go                   ← unit tests (mock clickstore)
-│   │   ├── auth.go                           ← API key validation
-│   │   ├── cors.go                           ← CORS headers
-│   │   └── timeout.go                        ← request timeout context
+│   │   ├── ratelimit.go
+│   │   ├── metrics.go
+│   │   ├── metrics_test.go
+│   │   ├── auth.go                           ← AuthRequired — reads cookie → ← NEW
+│   │   │                                        validates Redis session →
+│   │   │                                        checks role = admin →
+│   │   │                                        redirects to /admin/login if invalid
+│   │   ├── auth_test.go                      ← NEW
+│   │   ├── cors.go
+│   │   └── timeout.go
 │   │
 │   ├── routes/
-│   │   └── routes.go                         ← all route + middleware registration
+│   │   └── routes.go                         ← /admin/* group behind AuthRequired
 │   │
 │   ├── helpers/
-│   │   └── helpers.go                        ← RenderPage jet template helper
+│   │   └── helpers.go
 │   │
 │   └── templates/
-│       └── templates.go                      ← TemplateData struct
+│       └── templates.go                      ← add SessionUser to TemplateData ← NEW
 │
 ├── pkg/
-│   ├── hash.go                               ← Base62/nanoid short code generation
-│   ├── respond.go                            ← standardized JSON response helpers
-│   ├── sanitize.go                           ← URL validation and sanitization
-│   └── logger.go                             ← structured logger (zerolog/zap)
+│   ├── hash.go
+│   ├── respond.go
+│   ├── sanitize.go
+│   └── logger.go
 │
 ├── views/
-│   ├── home.jet                              ← home page — shorten form
-│   └── admin.jet                             ← admin dashboard — analytics ← NEW
+│   ├── home.jet
+│   ├── admin.jet                             ← protected, only renders if authed
+│   ├── login.jet                             ← GET /admin/login ← NEW
+│   └── signup.jet                           ← GET /admin/signup (admin only) ← NEW
 │
 ├── static/
 │   └── css/
 │       ├── input.css
-│       └── output.css                        ← compiled (gitignored)
+│       └── output.css
 │
 ├── migrations/
 │   ├── 000001_create_urls_table.up.sql
@@ -79,7 +97,9 @@ url-shortener/
 │   ├── 000002_create_clicks_table.up.sql
 │   ├── 000002_create_clicks_table.down.sql
 │   ├── 000003_create_api_keys_table.up.sql
-│   └── 000003_create_api_keys_table.down.sql
+│   ├── 000003_create_api_keys_table.down.sql
+│   ├── 000004_create_admins_table.up.sql     ← NEW: id, email, password_hash,
+│   └── 000004_create_admins_table.down.sql      role, is_active, created_at
 │
 ├── docker/
 │   ├── Dockerfile

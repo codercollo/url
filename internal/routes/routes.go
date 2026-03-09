@@ -6,34 +6,46 @@ import (
 	"url/internal/middleware"
 	"url/internal/repository"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
 )
 
 // Register - wires all routes and middleware to the gin engine
-func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStore) {
+func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStore, sm *scs.SessionManager) {
 	//Static files
 	r.Static("/static", "./static")
 
 	// Ignore favicon requests
-	r.GET("/favicon.icon", func(c *gin.Context) {
+	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
 
-	//Global middleware - applies to every route
-	r.Use(middleware.RateLimiter())
+	//Session middleware rus on every request
+	r.Use(middleware.LoadSession(sm))
 
-	//Page routes
+	//Public Page
 	r.GET("/", h.Home)
 
-	//URL shortener
+	// Public auth routes
+	r.GET("/login", h.ShowLogin)
+	r.POST("/login", h.Login)
+	r.GET("/register", h.ShowCreateAccount)
+	r.POST("/register", h.CreateAccount)
+	r.POST("/logout", h.Logout)
+
+	//Public URL shortener routes
 	r.POST("/shorten", h.Shorten)
 
-	//Metrics only on /:code - tracks real clicks on redirects
+	//Metrics middleware is scoped  only to the redirect route
 	r.GET("/:code", middleware.Metrics(clickStore), h.Redirect)
 
 	//Per-URL analytics
 	r.GET("/:code/stats", h.AnalyticsHandler)
 
-	// Admin dashboard — HTML, shows all URLs + click counts
-	r.GET("/admin/stats", h.AdminStats)
+	//Protected admin routes
+	admin := r.Group("/admin")
+	admin.Use(middleware.RequireAdmin(sm))
+	{
+		admin.GET("/stats", h.AdminStats)
+	}
 }

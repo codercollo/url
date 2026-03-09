@@ -1,0 +1,104 @@
+{{define "title"}}Analytics{{end}}
+
+{{define "body"}}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="text-gray-500 text-sm mt-1">Track all your shortened links and clicks.</p>
+</div>
+
+<!-- Stats cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 flex items-center gap-5">
+        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500 mb-0.5">Total Links</p>
+            <p class="text-3xl font-bold text-gray-900">{{index .Data "total_links"}}</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 flex items-center gap-5">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500 mb-0.5">Total Clicks</p>
+            <p class="text-3xl font-bold text-blue-600">{{index .Data "total_clicks"}}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Links table -->
+<div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">All Short Links</h2>
+        <span class="text-xs text-gray-400">Sorted by creation date</span>
+    </div>
+    {{with index .Data "stats"}}
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="bg-gray-50 border-b border-gray-100">
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Link</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Clicks</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Last 30 days</th>
+                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {{range .}}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4">
+                    <p class="font-mono font-semibold text-gray-900 text-sm">{{.ShortCode}}</p>
+                    <a href="/{{.ShortCode}}" target="_blank"
+                        class="text-xs text-blue-500 hover:text-blue-700 hover:underline transition-colors">
+                        localhost:8080/{{.ShortCode}}
+                    </a>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center bg-blue-50 text-blue-700 text-sm font-bold px-2.5 py-0.5 rounded-lg">
+                        {{.TotalClicks}}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    {{if .Breakdown}}
+                    <div class="flex items-end gap-0.5 h-8">
+                        {{range .Breakdown}}
+                        <div class="bg-blue-400 hover:bg-blue-600 rounded-sm w-2.5 sparkbar transition-colors cursor-pointer"
+                            data-count="{{.Count}}"
+                            title="{{.Date}}: {{.Count}} clicks">
+                        </div>
+                        {{end}}
+                    </div>
+                    {{else}}
+                    <span class="text-gray-300 text-xs">No data yet</span>
+                    {{end}}
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <a href="/{{.ShortCode}}/stats"
+                        class="inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                        View stats →
+                    </a>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <div class="px-6 py-16 text-center">
+        <p class="text-gray-400 text-sm">No links shortened yet.</p>
+        <a href="/" class="mt-3 inline-block text-sm text-blue-600 hover:underline font-medium">Create your first link →</a>
+    </div>
+    {{end}}
+</div>
+
+<script>
+    document.querySelectorAll(".sparkbar").forEach((bar) => {
+        const count = parseInt(bar.dataset.count) || 0;
+        bar.style.height = Math.max(count * 4, 2) + "px";
+    });
+</script>
+{{end}}

@@ -53,3 +53,8 @@ func (s *AnalyticsService) GetAll(c context.Context, codes []string) ([]*models.
 	return results, nil
 
 }
+
+// GetAllShortCodes returns all active short codes from the store
+func (s *AnalyticsService) GetAllShortCodes(ctx context.Context) ([]string, error) {
+	return s.clicks.GetAllShortCodes(ctx)
+}

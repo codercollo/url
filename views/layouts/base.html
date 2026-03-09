@@ -1,0 +1,24 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{template "title" .}}</title>
+    <link rel="stylesheet" href="/static/css/output.css" />
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+    {{template "toast" .}}
+    <nav class="border-b border-gray-100 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <a href="/" class="text-blue-600 font-bold text-lg tracking-tight">snip.ly</a>
+            <a href="/admin/stats" class="text-sm text-gray-500 hover:text-blue-600 transition-colors">Dashboard</a>
+        </div>
+    </nav>
+    <main class="flex-1 flex items-center justify-center px-4 py-16">
+        {{template "body" .}}
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
+{{end}}

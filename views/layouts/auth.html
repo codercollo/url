@@ -1,0 +1,30 @@
+{{define "auth"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{template "title" .}} — snip.ly</title>
+    <link rel="stylesheet" href="/static/css/output.css" />
+</head>
+<body class="min-h-screen bg-gray-50 flex">
+    {{template "toast" .}}
+    <!-- Left brand panel -->
+    <div class="hidden lg:flex lg:w-1/2 bg-blue-600 flex-col justify-between p-12">
+        <a href="/" class="text-white font-bold text-2xl tracking-tight">snip.ly</a>
+        <div>
+            <p class="text-blue-100 text-4xl font-bold leading-tight mb-4">Short links.<br/>Big results.</p>
+            <p class="text-blue-200 text-base">Manage, track and analyse every link from one place.</p>
+        </div>
+        <p class="text-blue-300 text-xs">&copy; 2026 snip.ly</p>
+    </div>
+    <!-- Right form panel -->
+    <div class="flex-1 flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-sm">
+            <a href="/" class="lg:hidden text-blue-600 font-bold text-xl mb-8 block">snip.ly</a>
+            {{template "body" .}}
+        </div>
+    </div>
+</body>
+</html>
+{{end}}

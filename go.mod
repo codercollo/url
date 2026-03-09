@@ -3,16 +3,17 @@ module url
 go 1.25.5
 
 require (
-	github.com/CloudyKit/jet/v6 v6.3.1
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/jaevor/go-nanoid v1.4.0
+	github.com/lib/pq v1.11.2
 	github.com/redis/go-redis/v9 v9.18.0
+	golang.org/x/crypto v0.48.0
 	golang.org/x/time v0.14.0
 )
 
 require (
-	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
-	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -28,7 +29,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.11.2 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -40,12 +40,11 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
-	golang.org/x/tools v0.34.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 )
