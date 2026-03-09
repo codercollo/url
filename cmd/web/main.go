@@ -5,6 +5,10 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"url/internal/config"
 	"url/internal/handler"
 	"url/internal/repository"
@@ -75,8 +79,28 @@ func main() {
 	r.SetTrustedProxies([]string{cfg.Server.TrustedProxy})
 	routes.Register(r, h, pgStore, sessionManager)
 
-	log.Printf("starting server on %s (env: %s)", cfg.Server.Port, cfg.Env)
-	if err := r.Run(cfg.Server.Port); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+	//HTTP server
+	srv := &http.Server{
+		Addr:         cfg.Server.Port,
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
+
+	//Start server in a goroutine
+	go func() {
+		log.Printf("Starting server on %s (env: %s)", cfg.Server.Port, cfg.Env)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	//Block until SIGINT or SIGTERM received
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("server stopped cleanly")
+
 }
