@@ -20,6 +20,7 @@ var (
 	ErrAccountInactive    = errors.New("account not yet activated - check your email")
 	ErrTokenInvalid       = errors.New("activation link is invalid")
 	ErrTokenExpired       = errors.New("activation link is expired")
+	ErrInvalidResetToken  = errors.New("invalid or expired reset token")
 )
 
 // AuthService handles  admin account creation and login
@@ -130,6 +131,61 @@ func (s *AuthService) ActivateAccount(ctx context.Context, token string) error {
 	}
 
 	return s.store.ActivateAdmin(ctx, admin.ID)
+}
+
+// ForgotPassword generates and stores a password reset token for the admin
+// Doesn't reveal whether the email exists
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) (token string, err error) {
+	//Look up admin by email
+	admin, err := s.store.GetAdminByEmail(ctx, email)
+	if err != nil {
+		return "", nil
+	}
+
+	//Generate a secure random reset token
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	token = hex.EncodeToString(b)
+
+	//Set token expiration time
+	expires := time.Now().Add(1 * time.Hour)
+
+	//Store the reset token and expiry in the db
+	if err := s.store.SetResetToken(ctx, admin.ID, token, expires); err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+// ResetPassword verifies the reset token and updates the admin password
+func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	//Retrieve admin associated with the reset token
+	admin, err := s.store.GetAdminByResetToken(ctx, token)
+	if err != nil {
+		return ErrInvalidResetToken
+	}
+
+	//Ensure token exists and has not expired
+	if admin.ResetTokenExpiresAt == nil || time.Now().After(*admin.ResetTokenExpiresAt) {
+		return ErrInvalidResetToken
+	}
+
+	//Hash the new password using bcrypt
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	//Update the stored password hash
+	if err := s.store.UpdatePassword(ctx, admin.ID, string(hash)); err != nil {
+		return err
+	}
+
+	//Clear the reset token
+	return s.store.ClearResetToken(ctx, admin.ID)
 }
 
 // GenerateToken create a secure random 32-byte token returns it as a hex string

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 	"url/internal/models"
 )
 
@@ -131,5 +132,54 @@ func (s *PostgresStore) ActivateAdmin(ctx context.Context, id int) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE admins SET is_active = TRUE, activation_token = NULL, token_expires_at = NULL
 				 WHERE id = $1`, id)
+	return err
+}
+
+// SetResetToken stores a password reset token and expiration for an admin
+func (s *PostgresStore) SetResetToken(ctx context.Context, adminID int, token string, expires time.Time) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE admins SET reset_token = $1, reset_token_expires_at = $2 
+					WHERE id = $3`, token, expires, adminID,
+	)
+	return err
+
+}
+
+// GetAdminByResetToken retrieves an admin using a password reset token
+func (s *PostgresStore) GetAdminByResetToken(ctx context.Context, token string) (*models.Admin, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id, username, email, password_hash, reset_token_expires_at
+				FROM admins WHERE reset_token = $1`, token)
+
+	var a models.Admin
+	if err := row.Scan(
+		&a.ID,
+		&a.Username,
+		&a.Email,
+		&a.PasswordHash,
+		&a.ResetTokenExpiresAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &a, nil
+}
+
+// ClearResetToken removes the reset token after successful password reset
+func (s *PostgresStore) ClearResetToken(ctx context.Context, adminID int) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE admins SET reset_token = NULL, reset_token_expires_at = NULL 
+		WHERE id = $1`, adminID,
+	)
+	return err
+
+}
+
+// UpdatePassword updates the stored password hash for an admin
+func (s *PostgresStore) UpdatePassword(ctx context.Context, adminID int, hash string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE admins SET password_hash = $1 
+		 WHERE id = $2`, hash, adminID,
+	)
 	return err
 }

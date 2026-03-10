@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 	"url/internal/models"
 )
 
@@ -35,4 +36,9 @@ type AdminStore interface {
 	GetAdminByUsername(ctx context.Context, username string) (*models.Admin, error)
 	GetAdminByActivationToken(ctx context.Context, token string) (*models.Admin, error)
 	ActivateAdmin(ctx context.Context, id int) error
+
+	SetResetToken(ctx context.Context, adminID int, token string, expires time.Time) error
+	GetAdminByResetToken(ctx context.Context, token string) (*models.Admin, error)
+	ClearResetToken(ctx context.Context, adminID int) error
+	UpdatePassword(ctx context.Context, adminID int, hash string) error
 }

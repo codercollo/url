@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"url/internal/helpers"
+	"url/internal/mailer"
 	"url/internal/service"
 	"url/internal/templates"
 
@@ -122,4 +123,105 @@ func (h *Handler) Logout(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/login")
+}
+
+// ShowForgotPassword renders the forget password page
+func (h *Handler) ShowForgotPassword(c *gin.Context) {
+	helpers.RenderPage(c, "forgot_password", &templates.TemplateData{})
+}
+
+// ForgotPassword handles the password reset request form
+func (h *Handler) ForgotPassword(c *gin.Context) {
+	//Get email from submitted form
+	email := c.PostForm("email")
+
+	//Generate reset token if the email exists
+	token, err := h.auth.ForgotPassword(c.Request.Context(), email)
+	if err != nil {
+		helpers.RenderPage(c, "forgot_password", &templates.TemplateData{
+			Error: "Something went wrong, please try again",
+		})
+		return
+	}
+
+	//If token was generated, enqueue a reset email
+	if token != "" {
+		resetURL := h.baseURL + "/reset-password?token=" + token
+
+		h.mailer.Enqueue(mailer.Job{
+			To:           email,
+			Subject:      "Reset your snip.ly password",
+			TemplateName: "reset_password.html",
+			Data: map[string]string{
+				"ResetURL": resetURL,
+				"To":       email,
+			},
+		})
+	}
+
+	h.sessions.Put(c.Request.Context(), "flash", "If that email exists, a reset link has been sent.")
+	c.Redirect(http.StatusSeeOther, "/login")
+}
+
+// ShowResetPassword renders the password reset form using the token
+func (h *Handler) ShowResetPassword(c *gin.Context) {
+	token := c.Query("token")
+
+	//Redirect if no token is provided
+	if token == "" {
+		c.Redirect(http.StatusSeeOther, "/login")
+		return
+	}
+
+	//Render reset password page with token
+	helpers.RenderPage(c, "reset_password", &templates.TemplateData{
+		Data: map[string]interface{}{
+			"token": token,
+		},
+	})
+}
+
+// ResetPassword validates the reset token and updates the password
+func (h *Handler) ResetPassword(c *gin.Context) {
+	token := c.PostForm("token")
+	password := c.PostForm("password")
+	confirm := c.PostForm("confirm_password")
+
+	//Ensure passwords match
+	if password != confirm {
+		helpers.RenderPage(c, "reset_password", &templates.TemplateData{
+			Error: "Password do not match",
+			Data: map[string]interface{}{
+				"token": token,
+			},
+		})
+		return
+	}
+
+	//Enforce password length
+	if len(password) < 8 {
+		helpers.RenderPage(c, "reset_password", &templates.TemplateData{
+			Error: "Password must be at least 8 characters ",
+			Data: map[string]interface{}{
+				"token": token,
+			},
+		})
+		return
+	}
+
+	//Attempt password reset
+	if err := h.auth.ResetPassword(c.Request.Context(), token, password); err != nil {
+		helpers.RenderPage(c, "reset_password", &templates.TemplateData{
+			Error: "Reset link is invalid or has expired.",
+			Data: map[string]interface{}{
+				"token": token,
+			},
+		})
+		return
+	}
+
+	//Success message and redirect to login
+	h.sessions.Put(c.Request.Context(), "flash", "Password updated. You can now sign in.")
+	c.Redirect(http.StatusSeeOther, "/login")
+
 }

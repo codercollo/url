@@ -35,6 +35,10 @@ func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStor
 	r.GET("/register", h.ShowCreateAccount)
 	r.POST("/register", h.CreateAccount)
 	r.GET("/activate", h.ActivateAccount)
+	r.GET("/forgot-password", h.ShowForgotPassword)
+	r.POST("/forgot-password", h.ForgotPassword)
+	r.GET("/reset-password", h.ShowResetPassword)
+	r.POST("/reset-password", h.ResetPassword)
 	r.POST("/logout", h.Logout)
 
 	//Public URL shortener routes

@@ -4,12 +4,14 @@ import "time"
 
 //Admits represents an admin user who can access the dashboard
 type Admin struct {
-	ID              int       `db:"id"`
-	Username        string    `db:"username"`
-	Email           string    `db:"email"`
-	PasswordHash    string    `db:"password_hash"`
-	ActivationToken string    `db:"activation_token"`
-	TokenExpiresAt  time.Time `db:"token_expires_at"`
-	IsActive        bool      `db:"is_active"`
-	CreatedAt       time.Time `db:"created_at"`
+	ID                  int        `db:"id"`
+	Username            string     `db:"username"`
+	Email               string     `db:"email"`
+	PasswordHash        string     `db:"password_hash"`
+	ActivationToken     string     `db:"activation_token"`
+	TokenExpiresAt      time.Time  `db:"token_expires_at"`
+	ResetToken          string     `db:"reset_token"`
+	ResetTokenExpiresAt *time.Time `db:"reset_token_expires_at"`
+	IsActive            bool       `db:"is_active"`
+	CreatedAt           time.Time  `db:"created_at"`
 }

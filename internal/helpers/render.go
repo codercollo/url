@@ -36,6 +36,16 @@ var pages = map[string]pageConfig{
 		partials: []string{"views/partials/toast.html", "views/partials/nav.html", "views/partials/footer.html"},
 		page:     "views/admin_stats.html",
 	},
+	"forgot_password": {
+		layout:   "views/layouts/auth.html",
+		partials: []string{"views/partials/toast.html"},
+		page:     "views/forgot_password.html",
+	},
+	"reset_password": {
+		layout:   "views/layouts/auth.html",
+		partials: []string{"views/partials/toast.html"},
+		page:     "views/reset_password.html",
+	},
 }
 
 var layoutNames = map[string]string{
