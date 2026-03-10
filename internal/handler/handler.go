@@ -2,10 +2,12 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"time"
 	"url/internal/models"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/redis/go-redis/v9"
 )
 
 // Shortener interface defines the methods Handler needs.
@@ -34,14 +36,18 @@ type Handler struct {
 	analytics Analytics
 	auth      Auth
 	sessions  *scs.SessionManager
+	db        *sql.DB
+	rdb       *redis.Client
 }
 
 // NewHandler creates a new Handler with all required services injected
-func NewHandler(shortener Shortener, analytics Analytics, auth Auth, sessions *scs.SessionManager) *Handler {
+func NewHandler(shortener Shortener, analytics Analytics, auth Auth, sessions *scs.SessionManager, db *sql.DB, rdb *redis.Client) *Handler {
 	return &Handler{
 		shortener: shortener,
 		analytics: analytics,
 		auth:      auth,
 		sessions:  sessions,
+		db:        db,
+		rdb:       rdb,
 	}
 }

@@ -20,6 +20,9 @@ func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStor
 		c.Status(http.StatusNoContent)
 	})
 
+	//Health check
+	r.GET("/health", h.Health)
+
 	//Session middleware rus on every request
 	r.Use(middleware.LoadSession(sm))
 

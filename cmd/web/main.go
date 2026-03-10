@@ -72,7 +72,7 @@ func main() {
 	authSvc := service.NewAuthSevice(pgStore)
 
 	// Handlers
-	h := handler.NewHandler(shortenerSvc, analyticsSvc, authSvc, sessionManager)
+	h := handler.NewHandler(shortenerSvc, analyticsSvc, authSvc, sessionManager, db, rdb)
 
 	// Server
 	r := gin.Default()
