@@ -33,4 +33,6 @@ type AdminStore interface {
 	CreateAdmin(ctx context.Context, admin models.Admin) error
 	GetAdminByEmail(ctx context.Context, email string) (*models.Admin, error)
 	GetAdminByUsername(ctx context.Context, username string) (*models.Admin, error)
+	GetAdminByActivationToken(ctx context.Context, token string) (*models.Admin, error)
+	ActivateAdmin(ctx context.Context, id int) error
 }

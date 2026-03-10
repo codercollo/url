@@ -29,8 +29,11 @@ func (h *Handler) Login(c *gin.Context) {
 	admin, err := h.auth.Login(c.Request.Context(), email, password)
 	if err != nil {
 		msg := "Something went wrong, please try again"
-		if errors.Is(err, service.ErrInvalidCredantials) {
+		switch {
+		case errors.Is(err, service.ErrInvalidCredentials):
 			msg = "Invalid email or password"
+		case errors.Is(err, service.ErrAccountInactive):
+			msg = "Account not activated - check your email for the activation link"
 		}
 		helpers.RenderPage(c, "login", &templates.TemplateData{
 			Error: msg,
@@ -72,7 +75,41 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 	}
 
 	// Store flash in session before redirect — ShowLogin will pop it
-	h.sessions.Put(c.Request.Context(), "flash", "Account created! You can now log in.")
+	h.sessions.Put(c.Request.Context(), "flash", "Account created! Check you email to activate it before signing in.")
+	c.Redirect(http.StatusSeeOther, "/login")
+}
+
+// ActivateAccount handles the account activation request from a user
+func (h *Handler) ActivateAccount(c *gin.Context) {
+	//Get the activation token from the query string
+	token := c.Query("token")
+	if token == "" {
+		helpers.RenderPage(c, "login", &templates.TemplateData{
+			Error: "Invalid activation link",
+		})
+		return
+	}
+
+	//Call the service layer to activate the account
+	err := h.auth.ActivateAccount(c.Request.Context(), token)
+	if err != nil {
+		msg := "Activation failed. Please try again"
+
+		switch {
+		case errors.Is(err, service.ErrTokenInvalid):
+			msg = "This activation link is invalid"
+		case errors.Is(err, service.ErrTokenExpired):
+			msg = "This activation link has expired. Please register again"
+		}
+
+		helpers.RenderPage(c, "login", &templates.TemplateData{
+			Error: msg,
+		})
+		return
+	}
+
+	//Flash msg when successfull activation
+	h.sessions.Put(c.Request.Context(), "flash", "Account activated! You can now sign in")
 	c.Redirect(http.StatusSeeOther, "/login")
 }
 

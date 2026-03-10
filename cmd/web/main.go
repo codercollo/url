@@ -11,6 +11,7 @@ import (
 	"time"
 	"url/internal/config"
 	"url/internal/handler"
+	"url/internal/mailer"
 	"url/internal/repository"
 	"url/internal/routes"
 	"url/internal/service"
@@ -62,6 +63,21 @@ func main() {
 	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
 	sessionManager.Cookie.Secure = cfg.Session.SecureCookie
 
+	//Mailer
+	m, err := mailer.New(mailer.Config{
+		Host:     cfg.Mail.Host,
+		Port:     cfg.Mail.Port,
+		Username: cfg.Mail.Username,
+		Password: cfg.Mail.Password,
+		From:     cfg.Mail.From,
+	})
+	if err != nil {
+		log.Fatal("failed to init mailer:", err)
+	}
+	// Worker pool — starts cfg.Mail.Workers goroutines immediately
+	mailWorker := mailer.NewWorkerPool(m, cfg.Mail.Workers, cfg.Mail.QueueSize)
+	defer mailWorker.Shutdown()
+
 	// Repository layer
 	pgStore := repository.NewPostgresStore(db)
 	redisCache := repository.NewRedisCache(rdb, cfg.Redis.CacheTTL)
@@ -69,7 +85,7 @@ func main() {
 	// Service layer
 	shortenerSvc := service.NewShortenerService(pgStore, redisCache)
 	analyticsSvc := service.NewAnalyticsService(pgStore)
-	authSvc := service.NewAuthSevice(pgStore)
+	authSvc := service.NewAuthSevice(pgStore, mailWorker, cfg.AppBaseURL)
 
 	// Handlers
 	h := handler.NewHandler(shortenerSvc, analyticsSvc, authSvc, sessionManager, db, rdb)

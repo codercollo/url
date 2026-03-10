@@ -10,11 +10,13 @@ import (
 
 // Config groups all application configuration sections
 type Config struct {
-	Env     string
-	Server  ServerConfig
-	DB      DBConfig
-	Redis   RedisConfig
-	Session SessionConfig
+	Env        string
+	AppBaseURL string
+	Server     ServerConfig
+	DB         DBConfig
+	Redis      RedisConfig
+	Session    SessionConfig
+	Mail       MailConfig
 }
 
 // ServerConfig holds HTTP server settings
@@ -46,6 +48,18 @@ type SessionConfig struct {
 	SecureCookie bool
 }
 
+// MailConfig defines the mailer
+type MailConfig struct {
+	Host       string
+	Port       int
+	Username   string
+	Password   string
+	From       string
+	Workers    int
+	QueueSize  int
+	AppBaseURL string
+}
+
 // Load reads configuration from .env
 func Load() *Config {
 
@@ -73,6 +87,14 @@ func Load() *Config {
 	viper.SetDefault("SESSION_HTTP_ONLY", true)
 	viper.SetDefault("SESSION_SECURE_COOKIE", false)
 
+	viper.SetDefault("MAIL_HOST", "sandbox.smtp.mailtrap.io")
+	viper.SetDefault("MAIL_PORT", 587)
+	viper.SetDefault("MAIL_FROM", "noreply@snip.ly")
+	viper.SetDefault("MAIL_WORKERS", 3)
+	viper.SetDefault("MAIL_QUEUE_SIZE", 50)
+
+	viper.SetDefault("APP_BASE_URL", "http://localhost:8080")
+
 	//Attempt to load .env file
 	if err := viper.ReadInConfig(); err != nil {
 		log.Println("no .env file found, using environment variables and defaults")
@@ -97,7 +119,8 @@ func Load() *Config {
 
 	// Construct and return application config
 	return &Config{
-		Env: strings.ToLower(viper.GetString("ENV")),
+		Env:        strings.ToLower(viper.GetString("ENV")),
+		AppBaseURL: viper.GetString("APP_BASE_URL"),
 
 		Server: ServerConfig{
 			// Ensure port always has ":" prefix
@@ -123,6 +146,16 @@ func Load() *Config {
 			Lifetime:     sessionLifetime,
 			HttpOnly:     viper.GetBool("SESSION_HTTP_ONLY"),
 			SecureCookie: viper.GetBool("SESSION_SECURE_COOKIE"),
+		},
+
+		Mail: MailConfig{
+			Host:      viper.GetString("MAIL_HOST"),
+			Port:      viper.GetInt("MAIL_PORT"),
+			Username:  viper.GetString("MAIL_USERNAME"),
+			Password:  viper.GetString("MAIL_PASSWORD"),
+			From:      viper.GetString("MAIL_FROM"),
+			Workers:   viper.GetInt("MAIL_WORKERS"),
+			QueueSize: viper.GetInt("MAIL_QUEUE_SIZE"),
 		},
 	}
 }

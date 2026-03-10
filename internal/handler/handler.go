@@ -28,6 +28,7 @@ type Analytics interface {
 type Auth interface {
 	CreateAdmin(ctx context.Context, username, email, password string) error
 	Login(ctx context.Context, email, password string) (*models.Admin, error)
+	ActivateAccount(ctx context.Context, token string) error
 }
 
 // Handler holds all dependencies for HTTP handlers
