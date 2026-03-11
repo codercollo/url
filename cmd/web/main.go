@@ -126,6 +126,19 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
+	log.Println("shutting down ....")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("forced shutdown: %v", err)
+	}
+
+	if err := rdb.Close(); err != nil {
+		log.Printf("redis close error: %v", err)
+	}
+
 	log.Println("server stopped cleanly")
 
 }

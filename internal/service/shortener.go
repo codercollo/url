@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"time"
 
 	apperrors "url/internal/errors"
@@ -65,8 +66,11 @@ func (s *ShortenerService) Shorten(c context.Context, originalURL, customCode, c
 		return nil, err
 	}
 
-	// Cache result — non-fatal if it fails
-	_ = s.cache.Set(c, url)
+	// Cache result
+	//Log and continue if redis is down
+	if err := s.cache.Set(c, url); err != nil {
+		log.Printf("cache.Set degraded for %s: %v", url.ShortCode, err)
+	}
 
 	return &url, nil
 }
@@ -89,8 +93,11 @@ func (s *ShortenerService) Resolve(c context.Context, code string) (*models.URL,
 		if url == nil {
 			return nil, apperrors.ErrURLNotFound
 		}
-		// Write back to cache for next request
-		_ = s.cache.Set(c, *url)
+		// Write back to cache, log and continue if Redis is down
+		if err := s.cache.Set(c, *url); err != nil {
+			log.Printf("cache.Set write-back degraded for %s: %v", code, err)
+		}
+
 	}
 
 	// Validate expiration
@@ -111,7 +118,14 @@ func (s *ShortenerService) Delete(c context.Context, code string) error {
 	if err := s.db.Delete(c, code); err != nil {
 		return err
 	}
-	return s.cache.Delete(c, code)
+
+	//Cache delete
+	//Log and continue if Redis is down
+	if err := s.cache.Delete(c, code); err != nil {
+		log.Printf("cache.Delete degraded for %s: %v", code, err)
+	}
+
+	return nil
 }
 
 // generateCode creates a random 7-character URL-safe short code
