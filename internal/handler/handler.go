@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"time"
 	"url/internal/mailer"
 	"url/internal/models"
@@ -44,6 +45,7 @@ type Handler struct {
 	rdb       *redis.Client
 	mailer    *mailer.WorkerPool
 	baseURL   string
+	log       *slog.Logger
 }
 
 // NewHandler creates a new Handler with all required services injected
@@ -56,6 +58,7 @@ func NewHandler(
 	rdb *redis.Client,
 	mailer *mailer.WorkerPool,
 	baseURL string,
+	log *slog.Logger,
 ) *Handler {
 	return &Handler{
 		shortener: shortener,
@@ -66,5 +69,6 @@ func NewHandler(
 		rdb:       rdb,
 		mailer:    mailer,
 		baseURL:   baseURL,
+		log:       log,
 	}
 }

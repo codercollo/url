@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"testing"
 	"time"
 	apperrors "url/internal/errors"
@@ -124,7 +126,8 @@ func (m *mockCacheStore) Delete(c context.Context, code string) error {
 func setup() (*ShortenerService, *mockURLStore, *mockCacheStore) {
 	db := newMockURLStore()
 	cache := newMockCacheStore()
-	svc := NewShortenerService(db, cache)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := NewShortenerService(db, cache, logger)
 	return svc, db, cache
 }
 

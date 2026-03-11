@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	apperrors "url/internal/errors"
@@ -18,11 +18,12 @@ import (
 type ShortenerService struct {
 	db    repository.URLStore
 	cache repository.CacheStore
+	log   *slog.Logger
 }
 
 // NewShortenerService initializes the service layer
-func NewShortenerService(db repository.URLStore, cache repository.CacheStore) *ShortenerService {
-	return &ShortenerService{db: db, cache: cache}
+func NewShortenerService(db repository.URLStore, cache repository.CacheStore, log *slog.Logger) *ShortenerService {
+	return &ShortenerService{db: db, cache: cache, log: log}
 }
 
 // Shorten creates a new short URL
@@ -69,7 +70,7 @@ func (s *ShortenerService) Shorten(c context.Context, originalURL, customCode, c
 	// Cache result
 	//Log and continue if redis is down
 	if err := s.cache.Set(c, url); err != nil {
-		log.Printf("cache.Set degraded for %s: %v", url.ShortCode, err)
+		s.log.Warn("cache.Set degraded", "code", url.ShortCode, "error", err)
 	}
 
 	return &url, nil
@@ -81,7 +82,8 @@ func (s *ShortenerService) Resolve(c context.Context, code string) (*models.URL,
 	// Attempt cache lookup first
 	url, err := s.cache.Get(c, code)
 	if err != nil {
-		return nil, err
+		s.log.Warn("cache.Get degraded — falling back to postgres", "code", code, "error", err)
+		url = nil
 	}
 
 	// Cache miss — query Postgres
@@ -95,7 +97,7 @@ func (s *ShortenerService) Resolve(c context.Context, code string) (*models.URL,
 		}
 		// Write back to cache, log and continue if Redis is down
 		if err := s.cache.Set(c, *url); err != nil {
-			log.Printf("cache.Set write-back degraded for %s: %v", code, err)
+			s.log.Warn("cache.Set write-back degraded", "code", code, "error", err)
 		}
 
 	}
@@ -122,7 +124,7 @@ func (s *ShortenerService) Delete(c context.Context, code string) error {
 	//Cache delete
 	//Log and continue if Redis is down
 	if err := s.cache.Delete(c, code); err != nil {
-		log.Printf("cache.Delete degraded for %s: %v", code, err)
+		s.log.Warn("cache.Delete degraded", "code", code, "error", err)
 	}
 
 	return nil

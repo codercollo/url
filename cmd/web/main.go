@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +14,7 @@ import (
 	"url/internal/repository"
 	"url/internal/routes"
 	"url/internal/service"
+	"url/pkg/logger"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
@@ -24,6 +24,7 @@ import (
 
 func main() {
 	cfg := config.Load()
+	log := logger.New(cfg.Env)
 
 	// Set Gin mode from config
 	if cfg.Env == "production" {
@@ -33,7 +34,8 @@ func main() {
 	// Postgres
 	db, err := sql.Open("postgres", cfg.DB.DSN)
 	if err != nil {
-		log.Fatal("failed to connect to postgres:", err)
+		log.Error("failed to connect to postgres", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -42,8 +44,10 @@ func main() {
 	db.SetConnMaxLifetime(cfg.DB.ConnMaxLifetime)
 
 	if err := db.Ping(); err != nil {
-		log.Fatal("postgres ping failed:", err)
+		log.Error("postgres ping failed", "error", err)
+		os.Exit(1)
 	}
+	log.Info("postgres connected!")
 
 	// Redis
 	rdb := redis.NewClient(&redis.Options{
@@ -53,8 +57,10 @@ func main() {
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		log.Fatal("redis ping failed:", err)
+		log.Error("redis ping failed", "error", err)
+		os.Exit(1)
 	}
+	log.Info("redis connected")
 
 	// Session manager
 	sessionManager := scs.New()
@@ -72,7 +78,8 @@ func main() {
 		From:     cfg.Mail.From,
 	})
 	if err != nil {
-		log.Fatal("failed to init mailer:", err)
+		log.Error("failed to initialize mailer", "error", err)
+		os.Exit(1)
 	}
 	// Worker pool — starts cfg.Mail.Workers goroutines immediately
 	mailWorker := mailer.NewWorkerPool(m, cfg.Mail.Workers, cfg.Mail.QueueSize)
@@ -83,7 +90,7 @@ func main() {
 	redisCache := repository.NewRedisCache(rdb, cfg.Redis.CacheTTL)
 
 	// Service layer
-	shortenerSvc := service.NewShortenerService(pgStore, redisCache)
+	shortenerSvc := service.NewShortenerService(pgStore, redisCache, log)
 	analyticsSvc := service.NewAnalyticsService(pgStore)
 	authSvc := service.NewAuthSevice(pgStore, mailWorker, cfg.AppBaseURL)
 
@@ -97,6 +104,7 @@ func main() {
 		rdb,
 		mailWorker,
 		cfg.AppBaseURL,
+		log,
 	)
 
 	// Server
@@ -115,9 +123,10 @@ func main() {
 
 	//Start server in a goroutine
 	go func() {
-		log.Printf("Starting server on %s (env: %s)", cfg.Server.Port, cfg.Env)
+		log.Info("server starting", "addr", cfg.Server.Port, "emv", cfg.Env)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+			log.Error("server error!", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -126,19 +135,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("shutting down ....")
+	log.Info("shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("forced shutdown: %v", err)
+		log.Error("forced shutdown", "error", err)
+		os.Exit(1)
 	}
 
 	if err := rdb.Close(); err != nil {
-		log.Printf("redis close error: %v", err)
+		log.Error("redis close error", "error", err)
 	}
 
-	log.Println("server stopped cleanly")
+	log.Info("server stopped cleanly")
 
 }
