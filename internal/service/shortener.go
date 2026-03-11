@@ -8,6 +8,7 @@ import (
 	apperrors "url/internal/errors"
 	"url/internal/models"
 	"url/internal/repository"
+	"url/pkg/sanitize"
 
 	gonanoid "github.com/jaevor/go-nanoid"
 )
@@ -29,6 +30,13 @@ func NewShortenerService(db repository.URLStore, cache repository.CacheStore, lo
 // Shorten creates a new short URL
 // Avoids duplicates and optionally sets expiration
 func (s *ShortenerService) Shorten(c context.Context, originalURL, customCode, createdBy string, ttl *time.Duration) (*models.URL, error) {
+	//Sanitize and normalize the URL
+	cleanURL, err := sanitize.URL(originalURL)
+	if err != nil {
+		return nil, err
+	}
+
+	originalURL = cleanURL
 	// Check if URL already exists — avoid duplicates
 	existing, err := s.db.GetByOriginalURL(c, originalURL)
 	if err != nil {
