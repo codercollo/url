@@ -1,96 +1,86 @@
 url-shortener/
-│
 ├── cmd/
 │   └── web/
-│       └── main.go                           ← wires auth service + session store
-│
+│       └── main.go
 ├── internal/
 │   ├── config/
-│   │   └── config.go                         ← loads .env into Config struct
-│   │
+│   │   └── config.go
 │   ├── errors/
-│   │   └── errors.go                         ← ErrNotFound, ErrExpired, ErrInactive
-│   │                                            ErrUnauthorized, ErrForbidden ← NEW
-│   │
+│   │   └── errors.go
 │   ├── models/
-│   │   ├── url.go                            ← URL, ShortCode, ClickEvent structs
-│   │   ├── analytics.go                      ← AnalyticsAggregate, DailyCount structs
-│   │   └── admin.go                          ← Admin, Role, Session structs ← NEW
-│   │
+│   │   ├── url.go
+│   │   ├── analytics.go
+│   │   └── admin.go
 │   ├── repository/
-│   │   ├── repository.go                     ← all interfaces
-│   │   ├── url_repo.go                       ← PostgresStore
+│   │   ├── repository.go
+│   │   ├── url_repo.go
 │   │   ├── url_repo_test.go
-│   │   ├── cache_repo.go                     ← RedisCache
+│   │   ├── cache_repo.go
 │   │   ├── cache_repo_test.go
-│   │   ├── admin_repo.go                     ← AdminStore — GetByEmail, Save ← NEW
-│   │   ├── admin_repo_test.go                ← NEW
-│   │   ├── session_repo.go                   ← SessionStore — Redis-backed ← NEW
-│   │   └── session_repo_test.go              ← NEW
-│   │
+│   │   ├── admin_repo.go
+│   │   └── session_repo.go
 │   ├── service/
 │   │   ├── shortener.go
 │   │   ├── shortener_test.go
 │   │   ├── analytics.go
 │   │   ├── analytics_test.go
-│   │   ├── auth_service.go                   ← Login, Logout, CreateAdmin ← NEW
-│   │   └── auth_service_test.go              ← NEW
-│   │
+│   │   ├── auth_service.go
+│   │   └── auth_service_test.go
 │   ├── handler/
-│   │   ├── handler.go                        ← add auth service to Handler struct
+│   │   ├── handler.go
 │   │   ├── home.go
 │   │   ├── shorten.go
 │   │   ├── shorten_test.go
 │   │   ├── redirect.go
 │   │   ├── redirect_test.go
 │   │   ├── analytics.go
-│   │   ├── analytics_test.go
-│   │   ├── admin.go                          ← AdminStats (protected)
-│   │   ├── admin_test.go
-│   │   ├── auth_handler.go                   ← GET/POST /admin/login ← NEW
-│   │   │                                        GET /admin/logout
-│   │   │                                        GET/POST /admin/signup (admin only)
-│   │   ├── auth_handler_test.go              ← NEW
+│   │   ├── admin.go
+│   │   ├── auth_handler.go
 │   │   └── health.go
-│   │
 │   ├── middleware/
 │   │   ├── ratelimit.go
 │   │   ├── metrics.go
 │   │   ├── metrics_test.go
-│   │   ├── auth.go                           ← AuthRequired — reads cookie → ← NEW
-│   │   │                                        validates Redis session →
-│   │   │                                        checks role = admin →
-│   │   │                                        redirects to /admin/login if invalid
-│   │   ├── auth_test.go                      ← NEW
+│   │   ├── auth.go
 │   │   ├── cors.go
 │   │   └── timeout.go
-│   │
 │   ├── routes/
-│   │   └── routes.go                         ← /admin/* group behind AuthRequired
-│   │
+│   │   └── routes.go
 │   ├── helpers/
-│   │   └── helpers.go
-│   │
+│   │   └── render.go
+│   ├── mailer/
+│   │   ├── mailer.go
+│   │   └── worker_pool.go
 │   └── templates/
-│       └── templates.go                      ← add SessionUser to TemplateData ← NEW
-│
+│       └── templates.go
 ├── pkg/
-│   ├── hash.go
-│   ├── respond.go
-│   ├── sanitize.go
-│   └── logger.go
-│
+│   ├── logger/
+│   │   └── logger.go
+│   └── sanitize/
+│       ├── sanitize.go
+│       └── sanitize_test.go
 ├── views/
-│   ├── home.jet
-│   ├── admin.jet                             ← protected, only renders if authed
-│   ├── login.jet                             ← GET /admin/login ← NEW
-│   └── signup.jet                           ← GET /admin/signup (admin only) ← NEW
-│
+│   ├── layouts/
+│   │   ├── base.html
+│   │   ├── auth.html
+│   │   └── admin.html
+│   ├── partials/
+│   │   ├── nav.html
+│   │   ├── footer.html
+│   │   └── toast.html
+│   ├── emails/
+│   │   ├── activation.html
+│   │   └── reset_password.html
+│   ├── home.html
+│   ├── login.html
+│   ├── create_account.html
+│   ├── forgot_password.html
+│   ├── reset_password.html
+│   └── admin_stats.html
 ├── static/
 │   └── css/
 │       ├── input.css
 │       └── output.css
-│
 ├── migrations/
 │   ├── 000001_create_urls_table.up.sql
 │   ├── 000001_create_urls_table.down.sql
@@ -98,22 +88,18 @@ url-shortener/
 │   ├── 000002_create_clicks_table.down.sql
 │   ├── 000003_create_api_keys_table.up.sql
 │   ├── 000003_create_api_keys_table.down.sql
-│   ├── 000004_create_admins_table.up.sql     ← NEW: id, email, password_hash,
-│   └── 000004_create_admins_table.down.sql      role, is_active, created_at
-│
-├── docker/
-│   ├── Dockerfile
-│   └── Dockerfile.dev
-│
+│   ├── 000004_create_admins_table.up.sql
+│   ├── 000004_create_admins_table.down.sql
+│   └── 000005_add_password_reset_to_admins.up.sql
 ├── .github/
 │   └── workflows/
-│       └── ci.yml
-│
+│       ├── test.yml
+│       └── deploy.yml
 ├── .env
 ├── .env.example
 ├── .gitignore
+├── Dockerfile
 ├── docker-compose.yml
-├── docker-compose.dev.yml
 ├── Makefile
 ├── go.mod
 ├── go.sum

@@ -106,6 +106,30 @@ test/verbose:
 vet:
 	go vet ./...
 
+
+# ==================================================================================
+# Docker
+# ==================================================================================
+## docker/build: build the Docker image
+docker/build:
+	docker compose build
+
+## docker/up: start all services
+docker/up:
+	docker compose up -d
+
+## docker/down: stop all services
+docker/down:
+	docker compose down
+
+## docker/logs: tail app logs
+docker/logs:
+	docker compose logs -f app
+
+## docker/migrate: run migrations inside Docker
+docker/migrate:
+	docker compose run --rm migrate	
+
 # ==================================================================================
 # Help
 # ==================================================================================

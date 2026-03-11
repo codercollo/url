@@ -110,7 +110,7 @@ func main() {
 	// Server
 	r := gin.Default()
 	r.SetTrustedProxies([]string{cfg.Server.TrustedProxy})
-	routes.Register(r, h, pgStore, sessionManager)
+	routes.Register(r, h, pgStore, sessionManager, cfg)
 
 	//HTTP server
 	srv := &http.Server{

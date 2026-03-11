@@ -2,6 +2,8 @@ package routes
 
 import (
 	"net/http"
+	"time"
+	"url/internal/config"
 	"url/internal/handler"
 	"url/internal/middleware"
 	"url/internal/repository"
@@ -11,7 +13,7 @@ import (
 )
 
 // Register - wires all routes and middleware to the gin engine
-func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStore, sm *scs.SessionManager) {
+func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStore, sm *scs.SessionManager, cfg *config.Config) {
 	//Static files
 	r.Static("/static", "./static")
 
@@ -19,6 +21,13 @@ func Register(r *gin.Engine, h *handler.Handler, clickStore repository.ClickStor
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
+
+	// Global middleware
+	r.Use(middleware.CORS(middleware.CORSConfig{
+		AllowedOrigins:   cfg.CORS.AllowedOrigins,
+		AllowCredentials: cfg.CORS.AllowCredentials,
+	}))
+	r.Use(middleware.Timeout(10 * time.Second))
 
 	//Health check
 	r.GET("/health", h.Health)

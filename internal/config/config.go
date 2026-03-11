@@ -17,6 +17,7 @@ type Config struct {
 	Redis      RedisConfig
 	Session    SessionConfig
 	Mail       MailConfig
+	CORS       CORSConfig
 }
 
 // ServerConfig holds HTTP server settings
@@ -60,6 +61,12 @@ type MailConfig struct {
 	AppBaseURL string
 }
 
+// CORSConfig defines CORS
+type CORSConfig struct {
+	AllowedOrigins   []string
+	AllowCredentials bool
+}
+
 // Load reads configuration from .env
 func Load() *Config {
 
@@ -94,6 +101,9 @@ func Load() *Config {
 	viper.SetDefault("MAIL_QUEUE_SIZE", 50)
 
 	viper.SetDefault("APP_BASE_URL", "http://localhost:8080")
+
+	viper.SetDefault("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+	viper.SetDefault("CORS_ALLOW_CREDENTIALS", false)
 
 	//Attempt to load .env file
 	if err := viper.ReadInConfig(); err != nil {
@@ -156,6 +166,11 @@ func Load() *Config {
 			From:      viper.GetString("MAIL_FROM"),
 			Workers:   viper.GetInt("MAIL_WORKERS"),
 			QueueSize: viper.GetInt("MAIL_QUEUE_SIZE"),
+		},
+
+		CORS: CORSConfig{
+			AllowedOrigins:   strings.Split(viper.GetString("CORS_ALLOWED_ORIGINS"), ","),
+			AllowCredentials: viper.GetBool("CORS_ALLOW_CREDENTIALS"),
 		},
 	}
 }

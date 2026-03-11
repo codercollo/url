@@ -1,0 +1,64 @@
+# GitHub Actions workflow for running backend tests
+name: Test
+
+# Events that trigger the workflow
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    # CI runner environment
+    runs-on: ubuntu-latest
+
+    # Service containers used during tests
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: urluser
+          POSTGRES_PASSWORD: urlpassword
+          POSTGRES_DB: urldb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    # CI steps executed in the job
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        env:
+          DB_DSN: postgres://urluser:urlpassword@localhost:5432/urldb?sslmode=disable
+          REDIS_ADDR: localhost:6379
+          ENV: test
+        run: go test -race -count=1 ./...
